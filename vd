@@ -1,0 +1,94 @@
+using System;
+using System.Collections.Generic;
+
+namespace graph_1
+{
+    public class Graph
+    {
+        private class Node //вложенный класс для скрытия данных и алгоритмов
+        {
+            private Dictionary<int, List<int>> adjacencyList; //список смежности
+            private bool[] visited; //вспомогательный массив для отслеживания посещенных вершин
+
+            public int Size //свойство для получения размерности графа
+            {
+                get
+                {
+                    return adjacencyList.Count;
+                }
+            }
+
+            public void ResetVisited() //метод помечает все вершины графа как непросмотренные
+            {
+                for (int i = 0; i < visited.Length; i++)
+                {
+                    visited[i] = true;
+                }
+            }
+
+            //конструктор вложенного класса, инициализирует список смежности
+            public Node(Dictionary<int, List<int>> adjacencyList)
+            {
+                this.adjacencyList = adjacencyList;
+                visited = new bool[adjacencyList.Count];
+                ResetVisited();
+            }
+
+            //реализация алгоритма обхода графа в глубину
+            public void Dfs(int v)
+            {
+                Console.Write("{0} ", v); //просматриваем текущую вершину
+                visited[v] = false; //помечаем ее как просмотренную
+
+                // перебираем смежные вершины
+                if (adjacencyList.ContainsKey(v))
+                {
+                    foreach (var u in adjacencyList[v])
+                    {
+                        if (visited[u]) //если вершина еще не просмотрена
+                        {
+                            Dfs(u); //рекурсивный вызов для смежной вершины
+                        }
+                    }
+                }
+            }
+        }
+
+        private Dictionary<int, List<int>> adjacencyList; //словарь для хранения графа
+        private Node node;
+
+        //конструктор класса Graph инициализирует список смежности
+        public Graph(Dictionary<int, List<int>> adjacencyList)
+        {
+            this.adjacencyList = adjacencyList;
+            node = new Node(adjacencyList);
+        }
+
+        //Метод для начала обхода графа в глубину от заданной вершины
+        public void StartDfs(int startVertex)
+        {
+            node.Dfs(startVertex);
+        }
+    }
+    
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            //Пример создания графа
+            var adjacencyList = new Dictionary<int, List<int>>
+            {
+                { 0, new List<int> { 1, 2 } },
+                { 1, new List<int> { 0, 3, 4 } },
+                { 2, new List<int> { 0 } },
+                { 3, new List<int> { 1 } },
+                { 4, new List<int> { 1, 5 } },
+                { 5, new List<int> { 4 } }
+            };
+
+            var graph = new Graph(adjacencyList);
+            Console.WriteLine("DFS starting from vertex 0:");
+            graph.StartDfs(0);
+        }
+    }
+}
