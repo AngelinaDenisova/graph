@@ -1,0 +1,159 @@
+
+class Graph:
+    def __init__(self, directed=False):
+        #конструктор пустого графа (по умолчанию неориентированный)
+        self.adjacency_list = {} #словарь для хранения списка смежности
+        self.directed = directed #флаг ориентации
+
+    def from_file(self, filename):
+    # Заполнение графа из файла
+      with open(filename, 'r') as f:
+          for line in f:
+              parts = line.strip().split()
+
+              if len(parts) == 2:
+                  vertex1, vertex2 = parts[0], parts[1]
+                  weight = 0  # По умолчанию вес 1
+              elif len(parts) == 1:
+                  vertex1, vertex2 = parts[0], None
+                  weight = None
+              elif len(parts) == 3:
+                  vertex1, vertex2, weight = parts[0], parts[1], int(parts[2])
+
+              # Добавляем вершины и рёбра напрямую в список смежности
+              if vertex1 not in self.adjacency_list:
+                  self.adjacency_list[vertex1] = {}
+              if vertex2 and vertex2 not in self.adjacency_list:
+                  self.adjacency_list[vertex2] = {}
+
+              if vertex2:
+                  self.adjacency_list[vertex1][vertex2] = weight
+                  if not self.directed:
+                      self.adjacency_list[vertex2][vertex1] = weight
+
+
+    def __copy__(self):
+        #конструктор копирования
+        new_graph = Graph(self.directed)
+        new_graph.adjacency_list = {k: v.copy() for k, v in self.adjacency_list.items()}
+        return new_graph
+
+    def add_vertex(self, vertex):
+        #Добавление новой вершины
+        if vertex not in self.adjacency_list: #проверка существования вершины
+            self.adjacency_list[vertex] = {}
+
+    def add_edge(self, vertex1, vertex2, weight=1):
+        #Добавление ребра (или дуги)
+        self.add_vertex(vertex1) #проверка существования вершины 1
+        self.add_vertex(vertex2)
+
+        if vertex2 in self.adjacency_list[vertex1]:
+            # Если такое ребро уже существует, спрашиваем пользователя
+            overwrite = input(f"Ребро между {vertex1} и {vertex2} уже существует. Пересоздать его с новым весом ({weight})? (y/n): ")
+            if overwrite.lower() != "y":
+                return
+
+        self.adjacency_list[vertex1][vertex2] = weight
+        if not self.directed:
+            self.adjacency_list[vertex2][vertex1] = weight
+
+
+    def remove_vertex(self, vertex):
+        #Удаление вершины
+        if vertex not in self.adjacency_list:
+            print(f"Ошибка: Вершина '{vertex}' не найдена.")
+            return
+
+        del self.adjacency_list[vertex] #удаление из списка смежности
+
+        for v in self.adjacency_list:
+            if vertex in self.adjacency_list[v]:
+                del self.adjacency_list[v][vertex] #удаление связи
+
+    def remove_edge(self, vertex1, vertex2):
+        #Удаление ребра (или дуги)
+        if vertex1 not in self.adjacency_list or vertex2 not in self.adjacency_list[vertex1]:
+            print(f"Ошибка: Ребро между '{vertex1}' и '{vertex2}' не найдено.")
+            return
+
+        del self.adjacency_list[vertex1][vertex2]
+        if not self.directed:
+            del self.adjacency_list[vertex2][vertex1]
+
+    def save_to_file(self, filename):
+        #Сохранение списка смежности в файл
+        with open(filename, 'w') as f:
+            for vertex, edges in self.adjacency_list.items():
+                for adj_vertex, weight in edges.items():
+                    f.write(f"{vertex} {adj_vertex} {weight}\n")
+            for vertex in self.adjacency_list:
+                if not self.adjacency_list[vertex]:  # Если у вершины нет соседей
+                    f.write(f"{vertex}\n")
+
+    def get_edges(self):
+        #Получение списка рёбер из списка смежности
+        edges = []
+        for vertex1, edges_dict in self.adjacency_list.items():
+            for vertex2, weight in edges_dict.items():
+                edges.append((vertex1, vertex2, weight))
+        return edges
+
+    def display(self):
+        #Вывод списка смежности на консоль
+        for vertex, edges in self.adjacency_list.items():
+            print(f"{vertex}: {edges}")
+
+# Консольный интерфейс
+def main():
+    print("Графовый интерфейс")
+    directed = input("Создать ориентированный граф? (yes/no): ").strip().lower() == 'yes'
+    graph = Graph(directed)
+
+    while True:
+        print("\nВыберите действие:")
+        print("1. Добавить вершину")
+        print("2. Добавить ребро")
+        print("3. Удалить вершину")
+        print("4. Удалить ребро")
+        print("5. Показать список смежности")
+        print("6. Сохранить граф в файл")
+        print("7. Загрузить граф из файла")
+        print("8. Выход")
+
+        choice = input("Ваш выбор: ")
+
+        if choice == "1":
+            vertex = input("Введите название вершины: ")
+            graph.add_vertex(vertex)
+            print(f"Вершина '{vertex}' добавлена.")
+        elif choice == "2":
+            vertex1 = input("Введите первую вершину: ")
+            vertex2 = input("Введите вторую вершину: ")
+            weight = int(input("Введите вес (по умолчанию 0): ") or 1)
+            graph.add_edge(vertex1, vertex2, weight)
+            print(f"Ребро от '{vertex1}' до '{vertex2}' добавлено с весом {weight}.")
+        elif choice == "3":
+            vertex = input("Введите название вершины для удаления: ")
+            graph.remove_vertex(vertex)
+        elif choice == "4":
+            vertex1 = input("Введите первую вершину: ")
+            vertex2 = input("Введите вторую вершину: ")
+            graph.remove_edge(vertex1, vertex2)
+        elif choice == "5":
+            graph.display()
+        elif choice == "6":
+            filename = input("Введите имя файла для сохранения: ")
+            graph.save_to_file(filename)
+            print("Граф сохранён в файл.")
+        elif choice == "7":
+            filename = input("Введите имя файла для загрузки: ")
+            graph.from_file(filename)
+            print("Граф загружен из файла.")
+        elif choice == "8":
+            break
+        else:
+            print("Неверный выбор, попробуйте ещё раз.")
+
+if __name__ == "__main__":
+    main()
