@@ -1,0 +1,67 @@
+Проверить, является ли орграф деревом, или лесом, или не является ни тем, ни другим
+
+class Graph:
+    def __init__(self, directed=False):
+        self.adjacency_list = {}  # Словарь для хранения списка смежности
+        self.directed = directed   # Флаг ориентации
+
+    def from_file(self, filename):
+        # Заполнение графа из файла
+        with open(filename, 'r') as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) < 2:
+                    continue
+                vertex1 = parts[0]
+                vertex2 = parts[1]
+                weight = 1  # По умолчанию вес 1
+                self.add_edge(vertex1, vertex2, weight)
+
+    def add_vertex(self, vertex):
+        if vertex not in self.adjacency_list:
+            self.adjacency_list[vertex] = {}
+
+    def add_edge(self, vertex1, vertex2, weight=1):
+        self.add_vertex(vertex1)
+        self.add_vertex(vertex2)
+        self.adjacency_list[vertex1][vertex2] = weight
+        if not self.directed:
+            self.adjacency_list[vertex2][vertex1] = weight
+
+    def dfs(self, v, visited, parent): #ОБХОД В ГЛУБИНУ
+        visited[v] = True
+        for neighbor in self.adjacency_list[v]:
+            if not visited[neighbor]:
+                if self.dfs(neighbor, visited, v):
+                    return True
+            elif parent != neighbor:  # Если посещённый сосед не родитель
+                return True
+        return False
+
+    def is_tree(self):
+        visited = {v: False for v in self.adjacency_list}
+        if self.dfs(next(iter(self.adjacency_list)), visited, None):
+            return False  # Если найден цикл, то не дерево
+        if not all(visited.values()):
+            return False  # Если не все вершины посещены, то не связано
+        return True  # Это дерево
+
+    def is_forest(self):
+        visited = {v: False for v in self.adjacency_list}
+        for vertex in self.adjacency_list:
+            if not visited[vertex]:
+                if self.dfs(vertex, visited, None):
+                    return False  # Если найден цикл в компоненте, то не лес
+        return True  # Все компоненты без циклов
+
+    def check_graph(self):
+        if self.is_tree():
+            return "Это дерево"
+        elif self.is_forest():
+            return "Это лес"
+        else:
+            return "Это не лес и не дерево"
+graph = Graph(directed=True)  # Если граф направленный
+graph.from_file('g_or_v.txt')  # Замените 'graph.txt' на имя вашего файла
+result = graph.check_graph()
+print(result)
