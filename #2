@@ -1,0 +1,57 @@
+#Для данной вершины орграфа вывести все «выходящие» соседние вершины.
+class Graph:
+    def __init__(self, directed=False):
+        #конструктор пустого графа (по умолчанию неориентированный)
+        self.adjacency_list = {} #словарь для хранения списка смежности
+        self.directed = directed #флаг ориентации
+
+    def from_file(self, filename):
+    # Заполнение графа из файла
+      with open(filename, 'r') as f:
+          for line in f:
+              parts = line.strip().split()
+
+              if len(parts) == 2:
+                  vertex1, vertex2 = parts[0], parts[1]
+                  weight = 0  # По умолчанию вес 0
+              elif len(parts) == 1:
+                  vertex1, vertex2 = parts[0], None
+                  weight = None
+              elif len(parts) == 3:
+                  vertex1, vertex2, weight = parts[0], parts[1], int(parts[2])
+
+              # Добавляем вершины и рёбра напрямую в список смежности
+              if vertex1 not in self.adjacency_list:
+                  self.adjacency_list[vertex1] = {}
+              if vertex2 and vertex2 not in self.adjacency_list:
+                  self.adjacency_list[vertex2] = {}
+
+              if vertex2:
+                  self.adjacency_list[vertex1][vertex2] = weight
+                  if not self.directed:
+                      self.adjacency_list[vertex2][vertex1] = weight
+
+    def display(self):
+        #Вывод списка смежности на консоль
+        for vertex, edges in self.adjacency_list.items():
+            print(f"{vertex}: {edges}")
+
+    def get_outgoing_neighbors(self, vertex):
+        # Метод для получения всех "выходящих" соседей
+        if vertex not in self.adjacency_list:
+            return f"Ошибка! Такой вершины не существует"
+
+        return list(self.adjacency_list[vertex].keys())  # Возвращает соседние вершины
+def main():
+  graph = Graph(directed=True)  # Создаем ориентированный граф
+  graph.from_file("t1.txt")  # Заполняем граф из файла
+  print(f"Список смежности графа")
+  graph.display()
+  print(f"Введите вершину")
+  vertex = input()
+  neighbors = graph.get_outgoing_neighbors(vertex)
+  print(f"Выходящие соседи для вершины {vertex}: {neighbors}")
+
+
+if __name__ == "__main__":
+    main()
