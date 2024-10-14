@@ -1,0 +1,86 @@
+# Построить орграф, являющийся симметрической разностью по дугам двух заданных орграфов (множество вершин получается объединением вершин исходных орграфов).
+class Graph:
+    def __init__(self, directed=False):
+        # Конструктор пустого графа (по умолчанию неориентированный)
+        self.adjacency_list = {}  # Словарь для хранения списка смежности
+        self.directed = directed  # Флаг ориентации
+
+    def from_file(self, filename):
+        # Заполнение графа из файла
+        with open(filename, 'r') as f:
+            for line in f:
+                parts = line.strip().split()
+
+                if len(parts) == 2:
+                    vertex1, vertex2 = parts[0], parts[1]
+                    weight = 0  # По умолчанию вес 0
+                elif len(parts) == 1:
+                    vertex1, vertex2 = parts[0], None
+                    weight = None
+                elif len(parts) == 3:
+                    vertex1, vertex2, weight = parts[0], parts[1], int(parts[2])
+
+                # Добавляем вершины и рёбра напрямую в список смежности
+                if vertex1 not in self.adjacency_list:
+                    self.adjacency_list[vertex1] = {}
+                if vertex2 and vertex2 not in self.adjacency_list:
+                    self.adjacency_list[vertex2] = {}
+
+                if vertex2:
+                    self.adjacency_list[vertex1][vertex2] = weight
+                    if not self.directed:
+                        self.adjacency_list[vertex2][vertex1] = weight
+    def add_vertex(self, vertex):
+        #Добавление новой вершины
+        if vertex not in self.adjacency_list: #проверка существования вершины
+            self.adjacency_list[vertex] = {}
+
+    def add_edge(self, vertex1, vertex2, weight=1):
+        #Добавление ребра (или дуги)
+        self.add_vertex(vertex1) #проверка существования вершины 1
+        self.add_vertex(vertex2)
+        self.adjacency_list[vertex1][vertex2] = weight
+        if not self.directed:
+            self.adjacency_list[vertex2][vertex1] = weight
+
+    def display(self):
+        #Вывод списка смежности на консоль
+        for vertex, edges in self.adjacency_list.items():
+            print(f"{vertex}: {edges}")
+    def bfs_path_count(self, start):
+        # Инициализация структуры данных
+        path_count = defaultdict(int)
+        visited = set()
+        queue = deque([start])
+        path_count[start] = 1  # Обозначаем, что есть один путь к самой себе
+
+        while queue:
+            current = queue.popleft()
+            visited.add(current)
+
+            for neighbor in self.adjacency_list.get(current, {}):
+                if neighbor not in visited:
+                    queue.append(neighbor)
+                path_count[neighbor] += path_count[current]
+
+        return path_count
+
+
+def main():
+  graph1 = Graph(directed=True)
+  graph1.from_file("t1.txt")
+  print(f"Список смежности графа 1:")
+  graph1.display()
+
+  graph2 = Graph(directed=True)
+  graph2.from_file("t2.txt")
+  print(f"Список смежности графа 2: ")
+  graph2.display()
+
+  result_graph = graph1.symmetric_difference(graph2)
+  print(f"Результирующий граф:")
+  result_graph.display()
+
+
+if __name__ == "__main__":
+    main()
