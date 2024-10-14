@@ -1,0 +1,60 @@
+# Вывести все вершины орграфа, не смежные с данной.
+class Graph:
+    def __init__(self, directed=False):
+        # Конструктор пустого графа (по умолчанию неориентированный)
+        self.adjacency_list = {}  # Словарь для хранения списка смежности
+        self.directed = directed  # Флаг ориентации
+
+    def from_file(self, filename):
+        # Заполнение графа из файла
+        with open(filename, 'r') as f:
+            for line in f:
+                parts = line.strip().split()
+
+                if len(parts) == 2:
+                    vertex1, vertex2 = parts[0], parts[1]
+                    weight = 0  # По умолчанию вес 0
+                elif len(parts) == 1:
+                    vertex1, vertex2 = parts[0], None
+                    weight = None
+                elif len(parts) == 3:
+                    vertex1, vertex2, weight = parts[0], parts[1], int(parts[2])
+
+                # Добавляем вершины и рёбра напрямую в список смежности
+                if vertex1 not in self.adjacency_list:
+                    self.adjacency_list[vertex1] = {}
+                if vertex2 and vertex2 not in self.adjacency_list:
+                    self.adjacency_list[vertex2] = {}
+
+                if vertex2:
+                    self.adjacency_list[vertex1][vertex2] = weight
+                    if not self.directed:
+                        self.adjacency_list[vertex2][vertex1] = weight
+    def display(self):
+        #Вывод списка смежности на консоль
+        for vertex, edges in self.adjacency_list.items():
+            print(f"{vertex}: {edges}")
+
+    def get_non_adjacent_vertices(self, vertex):
+        # Получение всех вершин, не смежных с данной
+        if vertex not in self.adjacency_list:
+            return f"Ошибка! Такой вершины не существует"
+        adjacent_vertices = set(self.adjacency_list[vertex].keys())  # Соседние вершины
+        all_vertices = set(self.adjacency_list.keys())  # Все вершины графа
+        # Вершины, не смежные с данной
+        non_adjacent_vertices = all_vertices - adjacent_vertices - {vertex}  # Исключаем саму вершину
+        return list(non_adjacent_vertices)
+
+def main():
+  graph = Graph(directed=True)  # Создаем ориентированный граф
+  graph.from_file("t1.txt")  # Заполняем граф из файла
+  print(f"Список смежности графа")
+  graph.display()
+  print(f"Введите вершину")
+  vertex = input()
+  neighbors = graph.get_non_adjacent_vertices(vertex)
+  print(f"Все вершины графа не смежные с {vertex}: {neighbors}")
+
+
+if __name__ == "__main__":
+    main()
