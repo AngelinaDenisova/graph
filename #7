@@ -1,0 +1,95 @@
+# Дан взвешенный неориентированный граф из N вершин и M ребер. Требуется найти в нем каркас минимального веса алгоритмом Прима
+
+import heapq
+
+class Graph:
+    def __init__(self, directed=False):
+        # Конструктор пустого графа (по умолчанию неориентированный)
+        self.adjacency_list = {}  # Словарь для хранения списка смежности
+        self.directed = directed  # Флаг ориентации
+
+    def from_file(self, filename):
+        # Заполнение графа из файла
+        with open(filename, 'r') as f:
+            for line in f:
+                parts = line.strip().split()
+
+                if len(parts) == 2:
+                    vertex1, vertex2 = parts[0], parts[1]
+                    weight = 1  # По умолчанию вес 1
+                elif len(parts) == 3:
+                    vertex1, vertex2, weight = parts[0], parts[1], int(parts[2])
+                else:
+                    continue  # Игнорируем некорректные строки
+
+                # Добавляем вершины и рёбра напрямую в список смежности
+                if vertex1 not in self.adjacency_list:
+                    self.adjacency_list[vertex1] = {}
+                if vertex2 not in self.adjacency_list:
+                    self.adjacency_list[vertex2] = {}
+
+                self.adjacency_list[vertex1][vertex2] = weight
+                if not self.directed:
+                    self.adjacency_list[vertex2][vertex1] = weight
+    def display(self):
+        #Вывод списка смежности на консоль
+        for vertex, edges in self.adjacency_list.items():
+            print(f"{vertex}: {edges}")
+
+    def add_vertex(self, vertex):
+        # Добавление новой вершины
+        if vertex not in self.adjacency_list:  # Проверка существования вершины
+            self.adjacency_list[vertex] = {}
+
+    def add_edge(self, vertex1, vertex2, weight=1):
+        # Добавление ребра (или дуги)
+        self.add_vertex(vertex1)  # Проверка существования вершины 1
+        self.add_vertex(vertex2)
+
+        self.adjacency_list[vertex1][vertex2] = weight
+        if not self.directed:
+            self.adjacency_list[vertex2][vertex1] = weight
+
+    def prim(self, start_vertex):
+        # Алгоритм Прима для нахождения минимального остовного дерева
+        if start_vertex not in self.adjacency_list:
+            return None
+
+        mst_edges = []  # Список для хранения рёбер остовного дерева
+        total_weight = 0  # Общий вес остовного дерева
+
+
+        visited = set([start_vertex])
+        edges = [ #список для хранения ребер в формате (вес, из_вершины, в_вершину)
+            (weight, start_vertex, to)
+            for to, weight in self.adjacency_list[start_vertex].items()
+        ]
+        heapq.heapify(edges) #преобразуем в кучу
+
+        while edges:
+            weight, frm, to = heapq.heappop(edges) #извлекаем ребро с наименьшим весом
+
+            if to not in visited:
+                visited.add(to)
+                mst_edges.append((frm, to, weight))
+                total_weight += weight
+
+                for to_next, weight_next in self.adjacency_list[to].items():
+                    if to_next not in visited:
+                        heapq.heappush(edges, (weight_next, to, to_next))
+
+        return mst_edges, total_weight
+
+if __name__ == "__main__":
+    graph = Graph()
+    graph.from_file('graph.txt')
+    print(f"Список смежности графа")
+    graph.display()
+    start_vertex = list(graph.adjacency_list.keys())[0]  # Начинаем с первой вершины
+    mst_edges, total_weight = graph.prim(start_vertex)
+
+    print("Рёбра минимального остовного дерева:")
+    for frm, to, weight in mst_edges:
+        print(f"{frm} -- {to} (вес {weight})")
+
+    print(f"Общий вес минимального остовного дерева: {total_weight}")
