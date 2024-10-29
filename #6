@@ -1,0 +1,73 @@
+#Для каждой вершины найти кратчайшее (по числу рёбер) расстояние от неё до ближайшей из заданного множества вершин.
+
+from collections import deque
+
+class Graph:
+    def __init__(self, directed=False):
+        self.adjacency_list = {}  # Словарь для хранения списка смежности
+        self.directed = directed   # Флаг ориентации
+
+    def from_file(self, filename):
+        # Заполнение графа из файла
+        with open(filename, 'r') as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) < 2:
+                    continue
+
+                vertex1 = parts[0]
+                vertex2 = parts[1]
+                weight = 0  # По умолчанию вес 1
+
+                # Добавляем вершины и рёбра напрямую в список смежности
+                if vertex1 not in self.adjacency_list:
+                    self.adjacency_list[vertex1] = {}
+                if vertex2 not in self.adjacency_list:
+                    self.adjacency_list[vertex2] = {}
+
+                self.adjacency_list[vertex1][vertex2] = weight
+
+                if not self.directed:
+                    self.adjacency_list[vertex2][vertex1] = weight
+
+    def bfs(self, start, target_set): #обход в ширину
+        #посещенные вершины
+        visited = {vertex: False for vertex in self.adjacency_list}
+        #минимальное расстояние от стартовой вершины до каждой вершины в графе
+        distance = {vertex: float('inf') for vertex in self.adjacency_list}
+        #очередь вершин, которые нужно посетить
+        queue = deque([start])
+        visited[start] = True
+        distance[start] = 0
+
+        while queue:
+            current = queue.popleft()
+            if current in target_set: #вершина в наборе целевых
+                return distance[current]
+            for neighbor in self.adjacency_list[current]:
+                if not visited[neighbor]:
+                    visited[neighbor] = True
+                    distance[neighbor] = distance[current] + 1
+                    queue.append(neighbor)
+
+        return float('inf')  # Если связная вершина не найдена - беск
+
+    def find_distances(self, targets):
+        result = {}
+        targets_set = set(targets)
+
+        for vertex in self.adjacency_list:
+            result[vertex] = self.bfs(vertex, targets_set)
+            # Если вершина не связана с какой-либо из целевых вершин, расстояние останется беск
+            if result[vertex] == float('inf'):
+                result[vertex] = -1  # Возвращаем -1 для изолированных вершин
+
+        return result
+
+graph = Graph(directed=False)
+graph.from_file('g.txt') #неор.граф
+#graph.from_file('or.txt') #ор.граф
+input_targets = input("Введите целевые вершины через пробел: ")
+targets = input_targets.split()  # Преобразуем введенные данные в список
+distances = graph.find_distances(targets)
+print(distances)
