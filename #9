@@ -1,0 +1,73 @@
+В графе нет циклов отрицательного веса. Найти k кратчайших путей между вершинами u и v. модификация алгоритма дейкстры
+
+import heapq
+
+class Graph:
+    def __init__(self, directed=False):
+        self.adjacency_list = {}  # Список смежности
+        self.directed = directed  # Флаг ориентации
+
+    def from_file(self, filename):
+        with open(filename, 'r') as f:
+            for line in f:
+                parts = line.strip().split()
+
+                if len(parts) == 3:
+                    vertex1, vertex2, weight = parts[0], parts[1], int(parts[2])
+                    self.add_edge(vertex1, vertex2, weight)
+                elif len(parts) == 2:
+                    vertex1, vertex2 = parts[0], parts[1]
+                    self.add_edge(vertex1, vertex2, 1)  # вес по умолчанию 1
+
+    def add_vertex(self, vertex):
+        if vertex not in self.adjacency_list:
+            self.adjacency_list[vertex] = {}
+
+    def add_edge(self, vertex1, vertex2, weight=1):
+        self.add_vertex(vertex1)
+        self.add_vertex(vertex2)
+        self.adjacency_list[vertex1][vertex2] = weight
+        if not self.directed:
+            self.adjacency_list[vertex2][vertex1] = weight
+
+    def k_shortest_paths(self, start, end, k):
+        # Список для хранения найденных k кратчайших путей
+        paths = []
+        # Куча для работы алгоритма
+        pq = []
+        # Храним пути и их стоимость в куче
+        heapq.heappush(pq, (0, [start]))  # (стоимость, путь)
+
+        while pq and len(paths) < k:
+            cost, path = heapq.heappop(pq)
+            last_vertex = path[-1]
+
+            if last_vertex == end: #проверка равенства с конечной вершиной
+                paths.append((cost, path))
+                continue
+
+            #для последней вершины извлеченного пути
+            for neighbor, weight in self.adjacency_list.get(last_vertex, {}).items():
+                new_cost = cost + weight
+                new_path = path + [neighbor]
+                heapq.heappush(pq, (new_cost, new_path))\
+
+        return paths
+
+if __name__ == "__main__":
+    graph = Graph()
+    graph.from_file('graph.txt')
+    start_vertex = input("Введите начальную вершину: ")
+    end_vertex = input("Введите конечную вершину: ")
+    k = int(input("Введите количество кратчайших путей: "))
+
+    # Проверка на существование вершин
+    if start_vertex not in graph.adjacency_list:
+        print("Ошибка! Вершина не найдена:", start_vertex)
+    elif end_vertex not in graph.adjacency_list:
+        print("Ошибка! Вершина не найдена:", end_vertex)
+    else:
+        k_shortest = graph.k_shortest_paths(start_vertex, end_vertex, k)
+        print(f'Первые {k} кратчайших путей от {start_vertex} до {end_vertex}:')
+        for cost, path in k_shortest:
+          print(f'Путь: {path}, Вес: {cost}')
