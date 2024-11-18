@@ -1,0 +1,83 @@
+В графе могут быть циклы отрицательного веса. Вывести цикл отрицательного веса, если он есть. алгоритм Беллмана-Форда
+
+class Graph:
+    def __init__(self, directed=False):
+        self.adjacency_list = {}
+        self.directed = directed
+
+    def from_file(self, filename):
+        with open(filename, 'r') as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) == 2:
+                    vertex1, vertex2 = parts[0], parts[1]
+                    weight = 0  # По умолчанию вес 0
+                elif len(parts) == 1:
+                    vertex1, vertex2 = parts[0], None
+                    weight = None
+                elif len(parts) == 3:
+                    vertex1, vertex2, weight = parts[0], parts[1], int(parts[2])
+
+                if vertex1 not in self.adjacency_list:
+                    self.adjacency_list[vertex1] = {}
+                if vertex2 and vertex2 not in self.adjacency_list:
+                    self.adjacency_list[vertex2] = {}
+
+                if vertex2:
+                    self.adjacency_list[vertex1][vertex2] = weight
+                    if not self.directed:
+                        self.adjacency_list[vertex2][vertex1] = weight
+
+    def bellman_ford(self, start_vertex):
+        # Инициализация расстояний
+        distances = {vertex: float('inf') for vertex in self.adjacency_list}
+        distances[start_vertex] = 0
+
+        # Список для хранения предшествующих вершин
+        predecessors = {vertex: None for vertex in self.adjacency_list}
+
+        # Основной алгоритм
+        for _ in range(len(self.adjacency_list) - 1):
+            for vertex in self.adjacency_list:
+              #прходим по каждой вершине и ее соседям
+                for neighbor, weight in self.adjacency_list[vertex].items():
+                    if distances[vertex] != float('inf') and distances[vertex] + weight < distances[neighbor]:
+                        distances[neighbor] = distances[vertex] + weight
+                        predecessors[neighbor] = vertex
+
+        # Проверка на наличие отрицательного цикла
+        for vertex in self.adjacency_list:
+            for neighbor, weight in self.adjacency_list[vertex].items():
+                if distances[vertex] != float('inf') and distances[vertex] + weight < distances[neighbor]:
+                    # Если мы можем уложиться в меньшее расстояние, чем до этого
+                    cycle = []
+                    current_vertex = neighbor
+                    visited = set()
+
+                    while current_vertex not in visited:
+                        visited.add(current_vertex)
+                        current_vertex = predecessors[current_vertex]
+
+                    # Завершение цикла
+                    cycle_start = current_vertex
+                    cycle.append(cycle_start)
+
+                    current_vertex = predecessors[cycle_start]
+                    while current_vertex != cycle_start:
+                        cycle.append(current_vertex)
+                        current_vertex = predecessors[current_vertex]
+
+                    cycle.append(cycle_start)
+                    cycle.reverse()  # Чтобы увидеть цикл в правильном порядке
+                    return cycle  # Возврат найденного отрицательного цикла
+
+        return None  # Отрицательный цикл не найден
+
+graph = Graph(directed=True)
+graph.from_file("test.txt")
+cycle = graph.bellman_ford('1')
+
+if cycle:
+    print("Отрицательный цикл:", " -> ".join(cycle))
+else:
+    print("Отрицательных циклов нет.")
