@@ -1,0 +1,91 @@
+В графе нет рёбер отрицательного веса. Вывести кратчайшие пути для всех пар вершин. алгоритм флойда-уоршелла
+
+class Graph:
+    def __init__(self, directed=False):
+        # конструктор пустого графа (по умолчанию неориентированный)
+        self.adjacency_list = {}  # словарь для хранения списка смежности
+        self.directed = directed  # флаг ориентации
+
+    def from_file(self, filename):
+        # Заполнение графа из файла
+        with open(filename, 'r') as f:
+            for line in f:
+                parts = line.strip().split()
+
+                if len(parts) == 2:
+                    vertex1, vertex2 = parts[0], parts[1]
+                    weight = 0  # По умолчанию вес 0
+                elif len(parts) == 1:
+                    vertex1, vertex2 = parts[0], None
+                    weight = None
+                elif len(parts) == 3:
+                    vertex1, vertex2, weight = parts[0], parts[1], int(parts[2])
+
+                # Добавляем вершины и рёбра напрямую в список смежности
+                if vertex1 not in self.adjacency_list:
+                    self.adjacency_list[vertex1] = {}
+                if vertex2 and vertex2 not in self.adjacency_list:
+                    self.adjacency_list[vertex2] = {}
+
+                if vertex2:
+                    self.adjacency_list[vertex1][vertex2] = weight
+                    if not self.directed:
+                        self.adjacency_list[vertex2][vertex1] = weight
+    def display(self):
+        #Вывод списка смежности на консоль
+        for vertex, edges in self.adjacency_list.items():
+            print(f"{vertex}: {edges}")
+
+    def floyd_warshall(self):
+        # Получаем список всех вершин
+        vertices = list(self.adjacency_list.keys())
+        n = len(vertices)
+
+        # Инициализация матрицы расстояний
+        distance = {v1: {v2: float('inf') for v2 in vertices} for v1 in vertices}
+
+        # Установка расстояний между соседями
+        for v1 in vertices:
+            for v2, weight in self.adjacency_list[v1].items():
+                distance[v1][v2] = weight
+
+        # Расстояние до самой себя
+        for v in vertices:
+            distance[v][v] = 0
+
+        # Алгоритм Флойда-Уоршелла
+        for k in vertices:
+            for i in vertices:
+                for j in vertices:
+                    if distance[i][j] > distance[i][k] + distance[k][j]:
+                        distance[i][j] = distance[i][k] + distance[k][j]
+
+        return distance
+
+    def print_shortest_paths(self):
+      distances = self.floyd_warshall()
+      for v1 in distances:
+          for v2 in distances[v1]:
+              if distances[v1][v2] == float('inf'):
+                  print(f"Нет пути от {v1} до {v2}")
+              else:
+                  path = self.reconstruct_path(v1, v2, distances)
+                  print(f"Кратчайший путь от {v1} до {v2}: {distances[v1][v2]}")
+                  print(f"Путь: {path}")
+
+    def reconstruct_path(self, v1, v2, distances):
+        path = [v2]
+        while v1 != v2:
+            for v in distances[v1]:
+                if distances[v1][v] + distances[v][v2] == distances[v1][v2]:
+                    path.append(v)
+                    v1 = v
+                    break
+        path.reverse()
+        return path
+
+graph = Graph(directed=False)
+graph.from_file('graph.txt')  # Загрузка графа из файла
+print(f"Список смежности графа")
+graph.display()
+graph.print_shortest_paths()    # Вывод кратчайших путей
