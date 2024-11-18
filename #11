@@ -1,0 +1,86 @@
+максимальный поток
+
+class Graph:
+    def __init__(self, directed=False):
+        self.adjacency_list = {}  # Список смежности
+        self.directed = directed  # Флаг ориентации
+
+    def from_file(self, filename):
+        with open(filename, 'r') as f:
+            for line in f:
+                parts = line.strip().split()
+
+                if len(parts) == 3:
+                    vertex1, vertex2, weight = parts[0], parts[1], int(parts[2])
+                    self.add_edge(vertex1, vertex2, weight)
+                elif len(parts) == 2:
+                    vertex1, vertex2 = parts[0], parts[1]
+                    self.add_edge(vertex1, vertex2, 1)  # вес по умолчанию 1
+
+    def add_vertex(self, vertex):
+        if vertex not in self.adjacency_list:
+            self.adjacency_list[vertex] = {}
+
+    def add_edge(self, vertex1, vertex2, weight=1):
+        self.add_vertex(vertex1)
+        self.add_vertex(vertex2)
+        self.adjacency_list[vertex1][vertex2] = weight
+        if not self.directed:
+            self.adjacency_list[vertex2][vertex1] = weight
+
+    def ford_fulkerson(self, start_vertex, end_vertex):
+        max_flow = 0 #начальное значение максимального потока
+        while True: #ищем увеличивающийся путь
+            path = self.bfs(start_vertex, end_vertex)
+            if not path:
+                break
+            min_capacity = float('inf') #минимальная пропускная способность
+            for i in range(len(path) - 1):
+                u, v = path[i], path[i + 1]
+                min_capacity = min(min_capacity, self.adjacency_list[u][v])
+            for i in range(len(path) - 1):
+                u, v = path[i], path[i + 1]
+                self.adjacency_list[u][v] -= min_capacity #уменьшаем проп.спос
+                self.adjacency_list[v][u] += min_capacity #увелич. для обратных
+            max_flow += min_capacity #прибавляем значение к максимальному потоку
+        return max_flow
+
+    def bfs(self, start_vertex, end_vertex):
+        visited = set() #посещенные вершины
+        parent = {start_vertex: None} #предки
+        queue = [start_vertex]
+
+        while queue:
+            u = queue.pop(0)
+            visited.add(u)
+            for v in self.adjacency_list[u]:
+                if v not in visited and self.adjacency_list[u][v] > 0:
+                    parent[v] = u
+                    queue.append(v)
+                    if v == end_vertex: #если путь найден, получаем список вершин
+                        return self.construct_path(parent, end_vertex)
+        return None
+
+    #Строит путь из parent от конечной вершины к начальной вершине и возвращает путь в виде списка вершин.
+    def construct_path(self, parent, end_vertex):
+        path = []
+        current = end_vertex
+        while current is not None:
+            path.append(current)
+            current = parent[current]
+        return path[::-1]
+
+
+if __name__ == "__main__":
+    graph = Graph()
+    graph.from_file('potok.txt')
+    start_vertex = input("Введите начальную вершину: ")
+    end_vertex = input("Введите конечную вершину: ")
+    # Проверка на существование вершин
+    if start_vertex not in graph.adjacency_list:
+        print("Ошибка! Вершина не найдена:", start_vertex)
+    elif end_vertex not in graph.adjacency_list:
+        print("Ошибка! Вершина не найдена:", end_vertex)
+    else:
+        max_flow = graph.ford_fulkerson(start_vertex, end_vertex)
+        print("Максимальный поток:", max_flow)
